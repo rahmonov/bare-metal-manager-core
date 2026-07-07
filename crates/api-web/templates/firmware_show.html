@@ -6,6 +6,10 @@
 <div id="json"><a id="json-link" href="">JSON</a></div>
 <h1>Firmware</h1>
 
+{% if let Some(status) = action_status %}
+{{ status.action_result_script()|safe }}
+{% endif %}
+
 <h2>Desired Firmware ({{ desired_firmware.len() }})</h2>
 <table class="sortable overview">
 	<thead>
@@ -35,5 +39,155 @@
 	{% endfor %}
 	</tbody>
 </table>
+
+<h2 id="host_firmware_config">Host Firmware Config Overrides</h2>
+<form method="POST" action="/admin/firmware#host_firmware_config">
+	<table class="detailsview">
+		<tr>
+			<th>Vendor <span aria-label="required">*</span></th>
+			<td>
+				<select id="host-firmware-vendor" name="vendor" required>
+					<option value="" selected disabled>Select vendor</option>
+					{% for vendor in vendor_options %}
+						<option value="{{ vendor }}">{{ vendor }}</option>
+					{% endfor %}
+				</select>
+			</td>
+		</tr>
+		<tr>
+			<th>Model <span aria-label="required">*</span></th>
+			<td>
+				<input id="host-firmware-model" type="text" name="model" list="host-firmware-model-options" autocomplete="off" required>
+				<datalist id="host-firmware-model-options"></datalist>
+			</td>
+		</tr>
+		<tr>
+			<th>Component <span aria-label="required">*</span></th>
+			<td>
+				<select name="component_type" required>
+					{% for option in component_type_options %}
+						<option value="{{ option.value }}">{{ option.label }}</option>
+					{% endfor %}
+				</select>
+			</td>
+		</tr>
+		<tr>
+			<th>Version <span aria-label="required">*</span></th>
+			<td><input type="text" name="version" required></td>
+		</tr>
+		<tr>
+			<th>Artifact URL <span aria-label="required">*</span></th>
+			<td><input type="url" name="artifact_url" required></td>
+		</tr>
+		<tr>
+			<th>Artifact SHA256</th>
+			<td>
+				<input type="text" name="artifact_sha256">
+				<br><small>Optional 64-character hex SHA-256 digest used to verify the downloaded artifact.</small>
+			</td>
+		</tr>
+		<tr>
+			<th>Explicit Update Start Needed</th>
+			<td>
+				<select name="explicit_start_needed">
+					<option value="preserve">Preserve</option>
+					<option value="true">True</option>
+					<option value="false">False</option>
+				</select>
+			</td>
+		</tr>
+		<tr>
+			<th>Preingest Upgrade When Below</th>
+			<td><input type="text" name="preingest_upgrade_when_below"></td>
+		</tr>
+		<tr>
+			<th>Default</th>
+			<td><input type="checkbox" name="default" checked></td>
+		</tr>
+		<tr>
+			<th>Install Only Specified</th>
+			<td>
+				<input type="checkbox" name="install_only_specified">
+				<br><small>Pass the selected component type to Redfish so multi-component packages install only that component.</small>
+			</td>
+		</tr>
+		<tr>
+			<th>Pre-update Resets</th>
+			<td>
+				<input type="checkbox" name="pre_update_resets">
+				<br><small>Run the required reset sequence before starting this firmware update.</small>
+			</td>
+		</tr>
+		<tr>
+			<th>Action</th>
+			<td><input type="submit" value="Upsert"></td>
+		</tr>
+	</table>
+</form>
+
+<template id="host-firmware-model-option-source">
+	{% for row in desired_firmware %}
+		<option value="{{ row.model }}" data-vendor="{{ row.vendor }}"></option>
+	{% endfor %}
+</template>
+<script>
+	const hostFirmwareVendor = document.getElementById("host-firmware-vendor");
+	const hostFirmwareModel = document.getElementById("host-firmware-model");
+	const hostFirmwareModelOptions = document.getElementById("host-firmware-model-options");
+	const hostFirmwareModelOptionSource = document.getElementById("host-firmware-model-option-source");
+
+	function updateHostFirmwareModelOptions() {
+		hostFirmwareModelOptions.replaceChildren();
+		for (const option of hostFirmwareModelOptionSource.content.querySelectorAll("option")) {
+			if (option.dataset.vendor === hostFirmwareVendor.value) {
+				hostFirmwareModelOptions.appendChild(option.cloneNode());
+			}
+		}
+	}
+
+	hostFirmwareVendor.addEventListener("change", function() {
+		hostFirmwareModel.value = "";
+		updateHostFirmwareModelOptions();
+	});
+	updateHostFirmwareModelOptions();
+</script>
+
+{% if host_firmware_configs.is_empty() %}
+<p>No host firmware config overrides.</p>
+{% else %}
+<table class="sortable overview">
+	<thead>
+	<tr>
+		<th>Vendor</th>
+		<th>Model</th>
+		<th>Explicit Update Start Needed</th>
+		<th>Ordering</th>
+		<th>Updated</th>
+		<th>Components</th>
+	</tr>
+	</thead>
+	<tbody>
+	{% for config in host_firmware_configs %}
+		<tr>
+			<td>{{ config.vendor }}</td>
+			<td>{{ config.model }}</td>
+			<td>{{ config.explicit_start_needed }}</td>
+			<td>{{ config.ordering }}</td>
+			<td>{{ config.updated_at }}</td>
+			<td>
+				{% for component in config.components %}
+					<span style="display: inline-block; margin-right: 0.75rem; white-space: nowrap;">
+						<b>{{ component.component }}</b>: {{ component.versions }}
+						{% if !component.preingest_upgrade_when_below.is_empty() %}
+							(min {{ component.preingest_upgrade_when_below }})
+						{% endif %}
+					</span>
+				{% endfor %}
+			</td>
+		</tr>
+	{% endfor %}
+	</tbody>
+</table>
+{% endif %}
 
 {% endblock %}

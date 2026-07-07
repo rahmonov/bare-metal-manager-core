@@ -511,7 +511,10 @@ pub fn routes(api: Arc<Api>) -> eyre::Result<NormalizePath<Router>> {
                 "/explored-endpoint/{endpoint_ip}/enable-lockdown",
                 post(explored_endpoint::enable_lockdown),
             )
-            .route("/firmware", get(firmware::show_html))
+            .route(
+                "/firmware",
+                get(firmware::show_html).post(firmware::upsert_host_firmware_config),
+            )
             .route("/firmware.json", get(firmware::show_json))
             .route("/host", get(machine::show_hosts_html))
             .route("/host.json", get(machine::show_hosts_json))

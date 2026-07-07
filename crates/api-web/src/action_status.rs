@@ -32,6 +32,7 @@ pub(crate) enum Type {
     EnableLockdown,
     DisableLockdown,
     Sku,
+    HostFirmwareConfig,
 }
 
 impl Type {
@@ -50,6 +51,7 @@ impl Type {
                 "enable_lockdown" => Some(Type::EnableLockdown),
                 "disable_lockdown" => Some(Type::DisableLockdown),
                 "sku" => Some(Type::Sku),
+                "host_firmware_config" => Some(Type::HostFirmwareConfig),
                 _ => None,
             })
     }
@@ -67,6 +69,7 @@ impl Type {
                 Type::EnableLockdown => "enable_lockdown",
                 Type::DisableLockdown => "disable_lockdown",
                 Type::Sku => "sku",
+                Type::HostFirmwareConfig => "host_firmware_config",
             },
         )
     }
@@ -81,6 +84,7 @@ impl Type {
             Type::EnableLockdown => "Enable Lockdown",
             Type::DisableLockdown => "Disable Lockdown",
             Type::Sku => "SKU Assignment",
+            Type::HostFirmwareConfig => "Host Firmware Config",
         }
     }
 }
